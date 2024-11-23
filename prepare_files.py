@@ -53,8 +53,6 @@ feather_file_name='df_keypoints.feather'
 
 path_to_feather = os.path.join(path_to_source,feather_file_name)
 
-# df_keypoints.to_feather(path_to_feather)
-                        
 df_keypoints = pd.read_feather(path_to_feather)[KEY_POINTS]
 
 # Шаг времени: 1/30 секунды
@@ -66,11 +64,13 @@ time_index = np.arange(len(df_keypoints)) * step  # [0.0, 0.033333, 0.066666, ..
 # Назначение временных меток как индекса
 df_keypoints.index = time_index
 
+df_keypoints.to_feather(path_to_feather)
+
 print('Начало df_keypoints', df_keypoints.head(5))
 print('Конец df_keypoints', df_keypoints.tail(5))
 
 annotation_file_name = os.path.join(path_to_source,df_annotation_file_name)
-df_annotation=pd.read_csv(annotation_file_name)
+df_annotation=pd.read_csv(annotation_file_name, index_col=0)
 print(df_annotation.head())
 
 general_eval_pose=[]
@@ -113,3 +113,23 @@ for index, row in df_annotation.iterrows():
 
 print(df_annotation)
 df_annotation.to_csv(annotation_file_name)
+
+# 1. Объединённая фильтрация строк и выбор столбцов с использованием .loc[]
+selected_columns = ['Фрагмент', 'mp3_start', 'mp3_end']
+df_mp3_annotation = df_annotation.loc[df_annotation['ID фрагмента'].notna(), selected_columns]
+
+print("\nОтфильтрованный DataFrame (без 'ID фрагмента'):")
+print(df_mp3_annotation)
+
+# 2. Сброс индекса и добавление его как колонки 'Index'
+df_mp3_annotation = df_mp3_annotation.reset_index().rename(columns={'index': 'Index'})
+
+print("\nОтфильтрованный DataFrame с колонкой 'Index':")
+print(df_mp3_annotation)
+
+# 3. Экспорт в JSON
+json_file_name = 'mp3_annotation.json'
+json_file_path = os.path.join(path_to_source,json_file_name)
+df_mp3_annotation.to_json(json_file_path, orient='records', indent=4, force_ascii=False)
+
+print(f"\nDataFrame успешно сохранён в {path_to_source}")
