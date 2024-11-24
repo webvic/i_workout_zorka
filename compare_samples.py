@@ -1,67 +1,70 @@
-import seaborn as sns
-from scipy.spatial.distance import cdist
+# import seaborn as sns
+import pandas as pd
+import numpy as np
+# from scipy.spatial.distance import cdist
+from tslearn.metrics import dtw
+from service_functions import get_max_energy_columns, normalize_keypoints, get_coordinates
+from service_functions import KEY_POINTS, BODY
 
 ################# Модуль вычисления близости между рядами #####################
 
 def cyclic_shift(df, shift):
     return df.apply(lambda x: np.roll(x, shift))
 
-from scipy.spatial.distance import cdist
+# # Функция для калибровки и визуализации вычисления расстояний между временными рядами
+# def calibrate_comparison(df1, df2):
+#     # Создаем копии исходных данных, чтобы избежать изменений в оригинальных DataFrame
+#     df1 = df1[KEY_POINTS].copy().reset_index(drop=True)
+#     df2 = df2[KEY_POINTS].copy().reset_index(drop=True)
 
-# Функция для калибровки и визуализации вычисления расстояний между временными рядами
-def calibrate_comparison(df1, df2):
-    # Создаем копии исходных данных, чтобы избежать изменений в оригинальных DataFrame
-    df1 = df1[KEY_POINTS].copy().reset_index(drop=True)
-    df2 = df2[KEY_POINTS].copy().reset_index(drop=True)
+#     # Нормализуем
+#     df1, df2 = normalize_keypoints(df1), normalize_keypoints(df2)
 
-    # Нормализуем
-    df1, df2 = normalize_keypoints(df1), normalize_keypoints(df2)
+#     # Выбираем 3 самых энергичных ряда
+#     num_reg_optim_cols = 3
+#     max_energy_cols = get_max_energy_columns(df1, num_reg_optim_cols)
+#     print('Самые энергичные ряды:', max_energy_cols)
 
-    # Выбираем 3 самых энергичных ряда
-    num_reg_optim_cols = 3
-    max_energy_cols = get_max_energy_columns(df1, num_reg_optim_cols)
-    print('Самые энергичные ряды:', max_energy_cols)
+#     # Сдвигаем df2 относительно df1
+#     df1, df2 = shift_sample(df1, df2, max_energy_cols)
 
-    # Сдвигаем df2 относительно df1
-    df1, df2 = shift_sample(df1, df2, max_energy_cols)
+#     # Получаем список всех ключевых точек для сравнения
+#     essential_points = df1.columns if 'ESSENTIAL_POINTS' not in globals() else ESSENTIAL_POINTS
 
-    # Получаем список всех ключевых точек для сравнения
-    essential_points = df1.columns if 'ESSENTIAL_POINTS' not in globals() else ESSENTIAL_POINTS
+#     # Инициализируем матрицы для расстояний DTW и корреляций
+#     dtw_matrix = pd.DataFrame(index=essential_points, columns=essential_points, dtype=float)
+#     corr_matrix = pd.DataFrame(index=essential_points, columns=essential_points, dtype=float)
 
-    # Инициализируем матрицы для расстояний DTW и корреляций
-    dtw_matrix = pd.DataFrame(index=essential_points, columns=essential_points, dtype=float)
-    corr_matrix = pd.DataFrame(index=essential_points, columns=essential_points, dtype=float)
+#     # Заполняем матрицы значениями DTW и корреляции
+#     for point1 in essential_points:
+#         for point2 in essential_points:
+#             dtw_distance = dtw(df1[point1], df2[point2])
+#             correlation = df1[point1].corr(df2[point2])
+#             dtw_matrix.loc[point1, point2] = dtw_distance
+#             corr_matrix.loc[point1, point2] = correlation
 
-    # Заполняем матрицы значениями DTW и корреляции
-    for point1 in essential_points:
-        for point2 in essential_points:
-            dtw_distance = dtw(df1[point1], df2[point2])
-            correlation = df1[point1].corr(df2[point2])
-            dtw_matrix.loc[point1, point2] = dtw_distance
-            corr_matrix.loc[point1, point2] = correlation
+#     # Нормируем значения в матрицах для визуализации
+#     max_dtw = dtw_matrix.max().max()
+#     dtw_matrix_normalized = dtw_matrix / max_dtw
+#     corr_matrix_normalized = (1 - corr_matrix) / 2  # Нормируем значения корреляции в диапазон от 0 до 1
 
-    # Нормируем значения в матрицах для визуализации
-    max_dtw = dtw_matrix.max().max()
-    dtw_matrix_normalized = dtw_matrix / max_dtw
-    corr_matrix_normalized = (1 - corr_matrix) / 2  # Нормируем значения корреляции в диапазон от 0 до 1
+#     # Визуализация матриц DTW и корреляции
+#     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
 
-    # Визуализация матриц DTW и корреляции
-    fig, axes = plt.subplots(1, 2, figsize=(20, 10))
+#     # Матрица DTW
+#     sns.heatmap(dtw_matrix_normalized, annot=dtw_matrix, cmap="RdYlGn_r", ax=axes[0], cbar=True, fmt='.2f')
+#     axes[0].set_title("Матрица расстояний DTW (нормированная)")
+#     axes[0].set_xticklabels(dtw_matrix.columns, rotation=45, ha='right')
+#     axes[0].set_yticklabels(dtw_matrix.index, rotation=0)
 
-    # Матрица DTW
-    sns.heatmap(dtw_matrix_normalized, annot=dtw_matrix, cmap="RdYlGn_r", ax=axes[0], cbar=True, fmt='.2f')
-    axes[0].set_title("Матрица расстояний DTW (нормированная)")
-    axes[0].set_xticklabels(dtw_matrix.columns, rotation=45, ha='right')
-    axes[0].set_yticklabels(dtw_matrix.index, rotation=0)
+#     # Матрица корреляций
+#     sns.heatmap(corr_matrix, annot=corr_matrix, cmap="RdYlGn", ax=axes[1], cbar=True, fmt='.2f')
+#     axes[1].set_title("Матрица корреляций (нормированная)")
+#     axes[1].set_xticklabels(corr_matrix.columns, rotation=45, ha='right')
+#     axes[1].set_yticklabels(corr_matrix.index, rotation=0)
 
-    # Матрица корреляций
-    sns.heatmap(corr_matrix, annot=corr_matrix, cmap="RdYlGn", ax=axes[1], cbar=True, fmt='.2f')
-    axes[1].set_title("Матрица корреляций (нормированная)")
-    axes[1].set_xticklabels(corr_matrix.columns, rotation=45, ha='right')
-    axes[1].set_yticklabels(corr_matrix.index, rotation=0)
-
-    plt.tight_layout()
-    plt.show()
+#     plt.tight_layout()
+#     plt.show()
 
 def compare_samples(df1, df2):
 
@@ -174,8 +177,8 @@ def DTW_compare(df1, df2, compare_columns=[]):
     # Уменьшаем список рядов для сравнения до num_compare_cols, выбирая самые энергичные
     compare_columns = get_max_energy_columns(df1, num_compare_cols, compare_columns)
 
-    num_plots = num_compare_cols
-    fig, axes = plt.subplots(1, num_plots, figsize=(4 * num_plots, 4))
+    # num_plots = num_compare_cols
+    # fig, axes = plt.subplots(1, num_plots, figsize=(4 * num_plots, 4))
 
     distances = []
 
@@ -187,18 +190,18 @@ def DTW_compare(df1, df2, compare_columns=[]):
         print(f'DTW расстояние для столбца {col}: {distance}')
         distances.append(distance)
 
-        # Построение графика
-        ax = axes[i]  # Исправлено
-        ax.plot(df1[col], label='df1 ' + col)
-        ax.plot(df2[col], label='df2 ' + col)
-        ax.set_title(f'График {col}')
-        ax.set_xlabel(f'DTW {distances[-1]:.2f}')
-        ax.legend()
+    #     # Построение графика
+    #     ax = axes[i]  # Исправлено
+    #     ax.plot(df1[col], label='df1 ' + col)
+    #     ax.plot(df2[col], label='df2 ' + col)
+    #     ax.set_title(f'График {col}')
+    #     ax.set_xlabel(f'DTW {distances[-1]:.2f}')
+    #     ax.legend()
 
-    # Настраиваем фигуру и выводим ее
-    plt.subplots_adjust(wspace=0.5)
-    plt.tight_layout()
-    plt.show()
+    # # Настраиваем фигуру и выводим ее
+    # plt.subplots_adjust(wspace=0.5)
+    # plt.tight_layout()
+    # plt.show()
 
 
     return np.array(distances).mean()
@@ -232,39 +235,3 @@ def DTW_compare(df1, df2, compare_columns=[]):
 #     plt.tight_layout()
 #     plt.show()
 
-def sample_classification(df_instructor,df_pupil):
-  # print('def sample_classification(df_pupil)')
-
-  indicator=[]
-  INDICES=['GENERAL']+list(BODY.keys())
-  # print(INDICES)
-
-  for index, row in df_instructor.iterrows():
-    # считываем файл со схемой движения инструктора
-    instructor_sample_df = pd.read_csv(path_to_instructor_dir + row['Ссылка на схему'])
-
-    # display('sample_classification: instructor_sample_df, df_pupil',instructor_sample_df, df_pupil)
-    # display(compare_samples(instructor_sample_df, df_pupil))
-    # print('sample_classification: Сравниваем сэмпл с движением инструктора',row['Упражнение'],row['Вид'])
-    indicator.append(compare_samples(instructor_sample_df, df_pupil))
-    indicator[-1]['Упражнение']=row['Упражнение']
-    indicator[-1]['Вид']=row['Вид']
-
-  # print('sample_classification: Цикл пройден')
-
-  df_indicator=pd.DataFrame(indicator)
-
-  # display('sample_classification: df_indicator', df_indicator)
-
-  scaler = MinMaxScaler()
-
-  df_scaled=pd.DataFrame(scaler.fit_transform(df_indicator[INDICES]),columns=INDICES)
-
-  # display('sample_classification: Нормированный', df_scaled)
-
-  # Находим в нормированной таблице индекс мин показателя general и возвращаем строку индикатора с измеренными параметрами]
-  min_general_row = df_indicator.loc[df_scaled['GENERAL'].idxmin()]
-  # print('sample_classification ----- Конец работы -------- : min_general_row', min_general_row)
-
-  # возвращаем строку df с результатами данного сэмпла
-  return min_general_row

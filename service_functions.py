@@ -1,5 +1,9 @@
 
 ############# Служебные функции для анализа keypoints_df #################
+import os
+import pandas as pd
+import numpy as np
+from scipy.stats import median_abs_deviation
 
 # Cтруктура данных Ключевые точки тела
 BODY = {
@@ -198,3 +202,29 @@ def normalize_keypoints(df_keypoints):
   # display(df_normalized)
 
   return df_normalized
+
+def time_to_seconds(time_str):
+    # Разделяем минуты и секунды
+    try:
+        if ':' in time_str:
+            minutes, seconds = time_str.split(':')
+            total_seconds = int(minutes) * 60 + float(seconds)
+        else:
+            total_seconds = float(time_str)
+    except ValueError:
+        print(f"Неправильный формат времени: {time_str}")
+        return 0
+
+    return total_seconds
+
+def create_filename_ext(original_filename,extention):
+    """
+    Создает имя файла из другого имени файла, прибавляя в конце '_keypoints.csv' вместо текущего расширения.
+
+    Параметры:
+    - original_filename: исходное имя файла
+
+    Возвращает новое имя файла с '_{part_index}.csv' в конце.
+    """
+    base_name = os.path.splitext(original_filename)[0]
+    return f"{base_name}.{extention}"

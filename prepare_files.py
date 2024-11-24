@@ -6,33 +6,7 @@ import pandas as pd
 import os
 import numpy as np
 from count_drills import match_sample_in_series
-from service_functions import KEY_POINTS
-
-def time_to_seconds(time_str):
-    # Разделяем минуты и секунды
-    try:
-        if ':' in time_str:
-            minutes, seconds = time_str.split(':')
-            total_seconds = int(minutes) * 60 + float(seconds)
-        else:
-            total_seconds = float(time_str)
-    except ValueError:
-        print(f"Неправильный формат времени: {time_str}")
-        return 0
-
-    return total_seconds
-
-def create_filename(original_filename,part_index):
-    """
-    Создает имя файла из другого имени файла, прибавляя в конце '_keypoints.csv' вместо текущего расширения.
-
-    Параметры:
-    - original_filename: исходное имя файла
-
-    Возвращает новое имя файла с '_{part_index}.csv' в конце.
-    """
-    base_name = os.path.splitext(original_filename)[0]
-    return f"{base_name}_{part_index}.csv"
+from service_functions import time_to_seconds, KEY_POINTS
 
 path_to_source='instructor_workout_source'
 # df_keypoints_file_name='df_keypoints.csv'
@@ -55,16 +29,16 @@ path_to_feather = os.path.join(path_to_source,feather_file_name)
 
 df_keypoints = pd.read_feather(path_to_feather)[KEY_POINTS]
 
-# Шаг времени: 1/30 секунды
-step = 1/30  # ≈0.033333 секунд
+# # Шаг времени: 1/30 секунды
+# step = 1/30  # ≈0.033333 секунд
 
-# Создание временного индекса в секундах с дробной частью
-time_index = np.arange(len(df_keypoints)) * step  # [0.0, 0.033333, 0.066666, ..., ...]
+# # Создание временного индекса в секундах с дробной частью
+# time_index = np.arange(len(df_keypoints)) * step  # [0.0, 0.033333, 0.066666, ..., ...]
 
-# Назначение временных меток как индекса
-df_keypoints.index = time_index
+# # Назначение временных меток как индекса
+# df_keypoints.index = time_index
 
-df_keypoints.to_feather(path_to_feather)
+# df_keypoints.to_feather(path_to_feather)
 
 print('Начало df_keypoints', df_keypoints.head(5))
 print('Конец df_keypoints', df_keypoints.tail(5))
