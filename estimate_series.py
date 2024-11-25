@@ -139,19 +139,20 @@ def estimate_series(workout_path='instructor_workout_source', input_file_path='p
 def main():
     # Создание парсера аргументов
     parser = argparse.ArgumentParser(description="Обработчик видео для общей оценки зарядки")
+    parser.add_argument('--workout_path', type=str, required=True, help='Путь к папке с ресурсами зарядки')
     parser.add_argument('--result_path', type=str, required=True, help='Путь к папке результата')
-    parser.add_argument('--workout_path', type=str, required=True, help='Путь к паке с ресурсами зарядки')
     parser.add_argument('--input_file_path', type=str, required=True, help='Путь к файлу для оцифровки/анализа')
 
     # Парсинг аргументов
     args = parser.parse_args()
 
     # Вывод аргументов для проверки
-    print(f"Путь к видео: {args.result_path}")
-    print(f"Путь к HTML файлу: {args.workout_path}")
+    print(f"Путь к папке результата: {args.result_path}")
+    print(f"Путь к папке с ресурсами зарядки: {args.workout_path}")
+    print(f"Путь к файлу для оцифровки/анализа: {args.input_file_path}")
 
     # Вызов основной функции
-    estimate_series(result_path=args.result_path, workout_path=args.workout_path,input_file_path=args.input_file_path)
+    estimate_series(result_path=args.result_path, workout_path=args.workout_path, input_file_path=args.input_file_path)
     
 if __name__ == "__main__":
     main()
