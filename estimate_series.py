@@ -47,6 +47,7 @@ def estimate_series(workout_path='instructor_workout_source', input_file_path='p
         df_keypoints = get_key_points_from_video(input_file_path)
     else:
         print(f'estimate_series: Неизвестны формат файла {input_file_path}')
+        return None
 
     print('Начало df_keypoints', df_keypoints.head(5))
     print('Конец df_keypoints', df_keypoints.tail(5))
@@ -150,8 +151,8 @@ def main():
     print(f"Путь к HTML файлу: {args.workout_path}")
 
     # Вызов основной функции
-    estimate_series(args.result_path, args.workout_path,args.input_file_path)
-
+    estimate_series(result_path=args.result_path, workout_path=args.workout_path,input_file_path=args.input_file_path)
+    
 if __name__ == "__main__":
     main()
 
