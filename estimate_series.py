@@ -40,14 +40,8 @@ pupil_fragments_path='pupil_fragments'
 
 def estimate_series(workout_path='instructor_workout_source', input_file_path='pupil_fragments/3.mp4',result_path='result_estim'):
 
-    if input_file_path.endswith('.csv'):
-        path_to_feather = os.path.join(workout_path, feather_file_name)
-        df_keypoints = pd.read_feather(path_to_feather)[KEY_POINTS]
-    elif input_file_path.endswith('.mp4'):
-        df_keypoints = get_key_points_from_video(input_file_path)
-    else:
-        print(f'estimate_series: Неизвестны формат файла {input_file_path}')
-        return None
+    path_to_feather = os.path.join(workout_path, feather_file_name)
+    df_keypoints = pd.read_feather(path_to_feather)[KEY_POINTS]
 
     print('Начало df_keypoints', df_keypoints.head(5))
     print('Конец df_keypoints', df_keypoints.tail(5))
@@ -69,7 +63,15 @@ def estimate_series(workout_path='instructor_workout_source', input_file_path='p
         print(f"Ошибка: 'Номер фрагмента {drill_index}' не соответствует разметке")
         return None
     
-    df_drill_pupil = pd.read_csv(input_file_path,index_col=0, encoding='utf-8')
+    # Загружаем фрагмент зарядки ученика
+    if input_file_path.endswith('.csv'):
+        df_drill_pupil = pd.read_csv(input_file_path,index_col=0, encoding='utf-8')
+    elif input_file_path.endswith('.mp4'):
+        df_drill_pupil = get_key_points_from_video(input_file_path)
+    else:
+        print(f'estimate_series: Неизвестный формат файла {input_file_path}')
+        return None
+    
     row = df_annotation.iloc[drill_index]
     
     print('Работаетм с фрагментом\n',pd.DataFrame([row]))
