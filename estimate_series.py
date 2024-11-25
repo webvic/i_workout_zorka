@@ -7,20 +7,10 @@ import pandas as pd
 import os
 import numpy as np
 from count_drills import match_sample_in_series
-from service_functions import time_to_seconds,create_filename_ext, KEY_POINTS
+from service_functions import time_to_seconds, KEY_POINTS
 from compare_samples import compare_samples
-
-def get_rate_by_score(val):
-    if val <=5:
-        rate=5
-    elif val < 10:
-        rate=4
-    elif val < 15:
-        rate=3
-    else:
-        rate=2
-
-    return rate
+from mediapipe_video_processing import get_key_points_from_video
+import argparse
 
 def append_dict_to_csv_pandas(result_path, data_dict, result_csv='result.csv'):
     
@@ -48,10 +38,15 @@ annotation_file_name='df_keypoints_annotation.csv'
 feather_file_name='df_keypoints.feather'
 pupil_fragments_path='pupil_fragments'
 
-def estimate_series(workout_path='instructor_workout_source', series_file_path='pupil_fragments/1.csv',result_path='result_estim'):
+def estimate_series(workout_path='instructor_workout_source', input_file_path='pupil_fragments/3.mp4',result_path='result_estim'):
 
-    path_to_feather = os.path.join(workout_path, feather_file_name)
-    df_keypoints = pd.read_feather(path_to_feather)[KEY_POINTS]
+    if input_file_path.endswith('.csv'):
+        path_to_feather = os.path.join(workout_path, feather_file_name)
+        df_keypoints = pd.read_feather(path_to_feather)[KEY_POINTS]
+    elif input_file_path.endswith('.mp4'):
+        df_keypoints = get_key_points_from_video(input_file_path)
+    else:
+        print(f'estimate_series: Неизвестны формат файла {input_file_path}')
 
     print('Начало df_keypoints', df_keypoints.head(5))
     print('Конец df_keypoints', df_keypoints.tail(5))
@@ -60,7 +55,7 @@ def estimate_series(workout_path='instructor_workout_source', series_file_path='
     df_annotation=pd.read_csv(annotation_file_path, index_col=0)
     print(df_annotation.head())
 
-    base_name = os.path.splitext(os.path.basename(series_file_path))[0]
+    base_name = os.path.splitext(os.path.basename(input_file_path))[0]
     print(base_name)
     try:
         # Пытаемся преобразовать строку в целое число
@@ -73,7 +68,7 @@ def estimate_series(workout_path='instructor_workout_source', series_file_path='
         print(f"Ошибка: 'Номер фрагмента {drill_index}' не соответствует разметке")
         return None
     
-    df_drill_pupil = pd.read_csv(series_file_path,index_col=0)
+    df_drill_pupil = pd.read_csv(input_file_path,index_col=0)
     row = df_annotation.iloc[drill_index]
     
     print('Работаетм с фрагментом\n',pd.DataFrame([row]))
@@ -140,62 +135,25 @@ def estimate_series(workout_path='instructor_workout_source', series_file_path='
 
 #     print(estimate_series(series_file_path=filename_path))
 
-def highlight_cells(val):
-    if val == 5:
-        color = 'background-color: green'
-    elif val == 4:
-        color = 'background-color: yellow'
-    elif val == 3:
-        color = 'background-color: orange'
-    else:
-        color = 'background-color: red'
+def main():
+    # Создание парсера аргументов
+    parser = argparse.ArgumentParser(description="Обработчик видео для общей оценки зарядки")
+    parser.add_argument('--result_path', type=str, required=True, help='Путь к папке результата')
+    parser.add_argument('--workout_path', type=str, required=True, help='Путь к паке с ресурсами зарядки')
+    parser.add_argument('--input_file_path', type=str, required=True, help='Путь к файлу для оцифровки/анализа')
 
-    return color
+    # Парсинг аргументов
+    args = parser.parse_args()
 
+    # Вывод аргументов для проверки
+    print(f"Путь к видео: {args.result_path}")
+    print(f"Путь к HTML файлу: {args.workout_path}")
 
-result_file='result.csv'
-mp3_annotation_file='mp3_annotation.json'
+    # Вызов основной функции
+    estimate_series(args.result_path, args.workout_path,args.input_file_path)
 
-def total_estim(result_path='result_estim', mp3_annotation_path='instructor_workout_source'):
-    
-    df_mp3_annotation=pd.read_json(os.path.join(mp3_annotation_path,mp3_annotation_file))
-    drill_num=len(df_mp3_annotation)
-    print ('df_mp3_annotation', df_mp3_annotation)
+if __name__ == "__main__":
+    main()
 
-    general_eval_pose = pd.read_csv(os.path.join(result_path,result_file))
-    general_eval_pose.set_index('Упражнение', inplace=True)
-    general_eval_pose = general_eval_pose.sort_values(by='Id')
-
-    # Фильтрация строк, где значение в колонке 'General' больше 2 (<15 в сырых значениях DTW)
-    valid_drill_num = len(general_eval_pose[general_eval_pose['GENERAL'] < 15])
-
-    if valid_drill_num < drill_num:
-        # Если общая оценка хотя бы по одному упражнению - не зачет - то за всю зарядку - незачет
-        return 2
-    else:
-        # Добавление итоговой строки со средними значениями
-        summary = general_eval_pose.mean().to_frame().T
-        summary.index = ['ИТОГ']
-        general_eval_pose = pd.concat([general_eval_pose, summary])
-
-        print(general_eval_pose)
-
-        subset=['HEAD','TORSO','ARMS','LEGS','GENERAL']
-
-        general_eval_pose[subset] = general_eval_pose[subset].applymap(get_rate_by_score)
-
-        print(general_eval_pose)
-
-        result_json_file=create_filename_ext(result_path, result_file)
-
-        general_eval_pose.to_json(result_json_file)
-
-        return general_eval_pose.loc['ИТОГ']['GENERAL']
-    
-total_score = total_estim()
-
-print('Общая оценка за зарядку', total_score)
-
-
-
+# python estimate_series.py --workout_path "instructor_workout_source" --result_path "result_estim" --input_file_path "pupil_fragments/3.mp4"
 

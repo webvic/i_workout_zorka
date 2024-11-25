@@ -217,14 +217,16 @@ def time_to_seconds(time_str):
 
     return total_seconds
 
-def create_filename_ext(original_filename,extention):
-    """
-    Создает имя файла из другого имени файла, прибавляя в конце '_keypoints.csv' вместо текущего расширения.
+def get_output_filename(input_path,suffix=None,ext=None):
+    # Разделяем путь на директорию, имя файла и расширение
+    directory, filename = os.path.split(input_path)
+    name, extension = os.path.splitext(filename)
 
-    Параметры:
-    - original_filename: исходное имя файла
+    if ext:
+        extension=ext
 
-    Возвращает новое имя файла с '_{part_index}.csv' в конце.
-    """
-    base_name = os.path.splitext(original_filename)[0]
-    return f"{base_name}.{extention}"
+    # Создаем новый путь с добавленным суффиксом
+    new_filename = f"{name}{suffix}{extension}"
+    output_path = os.path.join(directory, new_filename)
+
+    return output_path
