@@ -69,7 +69,7 @@ def estimate_series(workout_path='instructor_workout_source', input_file_path='p
         print(f"Ошибка: 'Номер фрагмента {drill_index}' не соответствует разметке")
         return None
     
-    df_drill_pupil = pd.read_csv(input_file_path,index_col=0)
+    df_drill_pupil = pd.read_csv(input_file_path,index_col=0, encoding='utf-8')
     row = df_annotation.iloc[drill_index]
     
     print('Работаетм с фрагментом\n',pd.DataFrame([row]))
